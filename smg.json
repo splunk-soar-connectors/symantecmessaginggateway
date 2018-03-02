@@ -1,0 +1,135 @@
+{
+    "appid": "fecc12e1-1a5c-43ed-b081-774522f20650",
+    "name": "Symantec Messaging Gateway",
+    "description": "This app integrates with an instance of Symantec Messaging Gateway to perform containment actions",
+    "type": "network security",
+    "product_vendor": "Symantec",
+    "logo": "logo_symantec.svg",
+    "logo_dark": "logo_symantec_dark.svg",
+    "product_name": "Messaging Gateway",
+    "product_version_regex": ".*",
+    "publisher": "Phantom",
+    "license": "Copyright (c) Phantom Cyber Corporation, 2018",
+    "app_version": "1.0.0",
+    "utctime_updated": "2018-03-01T19:28:36.993988Z",
+    "package_name": "phantom_symantecmessaginggateway",
+    "main_module": "smg_connector.pyc",
+    "min_phantom_version": "3.0.180",
+    "app_wizard_version": "1.0.0",
+    "configuration": {
+        "url": {
+            "description": "URL",
+            "data_type": "string",
+            "required": true,
+            "order": 0
+        },
+        "verify_server_cert": {
+            "description": "Verify Server Certificate",
+            "data_type": "boolean",
+            "required": false,
+            "default": false,
+            "order": 1
+        },
+        "username": {
+            "description": "Username",
+            "data_type": "string",
+            "required": true,
+            "order": 2
+        },
+        "password": {
+            "description": "Password",
+            "data_type": "password",
+            "required": true,
+            "order": 3
+        }
+    },
+    "actions": [
+        {
+            "action": "test connectivity",
+            "identifier": "test_connectivity",
+            "description": "Validate the asset configuration for connectivity using supplied configuration",
+            "verbose": "",
+            "type": "test",
+            "read_only": true,
+            "parameters": {},
+            "output": [],
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "blacklist email",
+            "identifier": "blacklist_email",
+            "description": "Add an email to the bad sender list",
+            "verbose": "This action will add an email address to the list of <b>Local Bad Sender Domains</b>.",
+            "type": "contain",
+            "read_only": false,
+            "parameters": {
+                "email": {
+                    "description": "Email to blacklist",
+                    "data_type": "string",
+                    "required": true,
+                    "primary": true,
+                    "contains": [
+                        "email"
+                    ],
+                    "order": 0
+                }
+            },
+            "output": [
+                {
+                    "data_path": "action_result.parameter.email",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "column_name": "email",
+                    "column_order": 0,
+                    "example_values": [
+                        "badperson@badplace.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "column_name": "status",
+                    "column_order": 1,
+                    "example_values": [
+                        "success"
+                    ]
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        ""
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                }
+            ],
+            "render": {
+                "type": "table"
+            },
+            "versions": "EQ(*)"
+        }
+    ]
+}
