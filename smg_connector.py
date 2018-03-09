@@ -55,13 +55,6 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         self.save_state(self._state)
         return phantom.APP_SUCCESS
 
-    def _process_empty_reponse(self, response, action_result):
-
-        if response.status_code == 200:
-            return RetVal(phantom.APP_SUCCESS, {})
-
-        return RetVal(action_result.set_status(phantom.APP_ERROR, "Empty response and no information in the header"), None)
-
     def _process_html_response(self, response, action_result):
 
         # An html response, treat it like an error
@@ -83,55 +76,6 @@ class SymantecMessagingGatewayConnector(BaseConnector):
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _process_json_response(self, r, action_result):
-
-        # Try a json parse
-        try:
-            resp_json = r.json()
-        except Exception as e:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(str(e))), None)
-
-        # Please specify the status codes here
-        if 200 <= r.status_code < 399:
-            return RetVal(phantom.APP_SUCCESS, resp_json)
-
-        # You should process the error returned in the json
-        message = "Error from server. Status Code: {0} Data from server: {1}".format(
-                r.status_code, r.text.replace('{', '{{').replace('}', '}}'))
-
-        return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
-
-    def _process_response(self, r, action_result):
-
-        # store the r_text in debug data, it will get dumped in the logs if the action fails
-        if hasattr(action_result, 'add_debug_data'):
-            action_result.add_debug_data({'r_status_code': r.status_code})
-            action_result.add_debug_data({'r_text': r.text})
-            action_result.add_debug_data({'r_headers': r.headers})
-
-        # Process each 'Content-Type' of response separately
-
-        # Process a json response
-        if 'json' in r.headers.get('Content-Type', ''):
-            return self._process_json_response(r, action_result)
-
-        # Process an HTML resonse, Do this no matter what the api talks.
-        # There is a high chance of a PROXY in between phantom and the rest of
-        # world, in case of errors, PROXY's return HTML, this function parses
-        # the error and adds it to the action_result.
-        if 'html' in r.headers.get('Content-Type', ''):
-            return self._process_html_response(r, action_result)
-
-        # it's not content-type that is to be parsed, handle an empty response
-        if not r.text:
-            return self._process_empty_reponse(r, action_result)
-
-        # everything else is actually an error at this point
-        message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
-                r.status_code, r.text.replace('{', '{{').replace('}', '}}'))
-
-        return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
-
     def _make_rest_call(self, endpoint, action_result, headers=None, params=None, data=None, method="get"):
 
         config = self.get_config()
@@ -143,7 +87,6 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         except AttributeError:
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)), resp_json)
 
-        # Create a URL to connect to
         url = self._base_url + endpoint
 
         try:
@@ -210,10 +153,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         self.save_progress("Test Connectivity Passed")
         return action_result.set_status(phantom.APP_SUCCESS)
 
-    def _handle_blacklist_email(self, param):
-
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
-        action_result = self.add_action_result(ActionResult(dict(param)))
+    def _blacklist_item(self, action_result, item, item_type):
 
         if phantom.is_fail(self._login(action_result)):
             self.debug_print("Login Failed")
@@ -223,7 +163,12 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders', 'selectedSenderGroups': '1|3'}
+        if item_type == 'ip':
+            sender_group = '1|1'
+        else:
+            sender_group = '1|3'
+
+        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders', 'selectedSenderGroups': sender_group}
         ret_val, resp = self._make_rest_call('/reputation/sender-group/viewSenderGroup.do', action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
@@ -232,7 +177,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'addEditSenders': param['email'], 'view': 'badSenders'}
+        params = {'symantec.brightmail.key.TOKEN': self._token, 'addEditSenders': item, 'view': 'badSenders'}
         ret_val, resp = self._make_rest_call('/reputation/sender-group/saveSender.do', action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
@@ -242,7 +187,124 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        return action_result.set_status(phantom.APP_SUCCESS)
+        return phantom.APP_SUCCESS
+
+    def _unblacklist_item(self, action_result, item, item_type):
+
+        if phantom.is_fail(self._login(action_result)):
+            self.debug_print("Login Failed")
+            return action_result.get_status()
+
+        ret_val, resp = self._make_rest_call('/reputation/sender-group/viewSenderGroup.do?view=badSenders', action_result)
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        if item_type == 'ip':
+            sender_group = '1|1'
+        else:
+            sender_group = '1|3'
+
+        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders', 'selectedSenderGroups': sender_group}
+        ret_val, resp = self._make_rest_call('/reputation/sender-group/viewSenderGroup.do', action_result, params=params)
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        member_table = soup.find('table', {'id': 'membersList'})
+        if not member_table:
+            return action_result.set_status(phantom.APP_ERROR, "Could not find member list table")
+
+        member_tags = soup.findAll('tr')
+        if not member_tags:
+            return action_result.set_status(phantom.APP_ERROR, "Could not find any items in bad senders list")
+        for tag in member_tags:
+            if item in tag.text:
+                checkbox = tag.find('input', {'name': 'selectedGroupMembers'})
+                if not checkbox:
+                    return action_result.set_status(phantom.APP_ERROR, "Could not find item ID")
+                item_id = checkbox['value']
+
+        ret_val, resp = self._make_rest_call('/reputation/sender-group/addSender.do', action_result, params=params)
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        params = {'symantec.brightmail.key.TOKEN': self._token, 'selectedGroupMembers': item_id, 'view': 'badSenders', 'selectedSenderGroups': '1|3'}
+        ret_val, resp = self._make_rest_call('/reputation/sender-group/deleteSender.do', action_result, params=params)
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders'}
+        ret_val, resp = self._make_rest_call('/reputation/sender-group/saveGroup.do', action_result, params=params)
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        return phantom.APP_SUCCESS
+
+    def _handle_blacklist_email(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        ret_val = self._blacklist_item(action_result, param['email'], 'email')
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully blacklisted email")
+
+    def _handle_unblacklist_email(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        ret_val = self._unblacklist_item(action_result, param['email'], 'email')
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully unblacklisted email")
+
+    def _handle_blacklist_domain(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        ret_val = self._blacklist_item(action_result, param['domain'], 'domain')
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully blacklisted domain")
+
+    def _handle_unblacklist_domain(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        ret_val = self._unblacklist_item(action_result, param['domain'], 'domain')
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully unblacklisted domain")
+
+    def _handle_blacklist_ip(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        ret_val = self._blacklist_item(action_result, param['ip'], 'ip')
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully blacklisted IP")
+
+    def _handle_unblacklist_ip(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        ret_val = self._unblacklist_item(action_result, param['ip'], 'ip')
+        if phantom.is_fail(ret_val):
+            return ret_val
+
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully unblacklisted IP")
 
     def handle_action(self, param):
 
@@ -257,6 +319,16 @@ class SymantecMessagingGatewayConnector(BaseConnector):
             ret_val = self._handle_test_connectivity(param)
         elif action_id == 'blacklist_email':
             ret_val = self._handle_blacklist_email(param)
+        elif action_id == 'unblacklist_email':
+            ret_val = self._handle_unblacklist_email(param)
+        elif action_id == 'blacklist_domain':
+            ret_val = self._handle_blacklist_domain(param)
+        elif action_id == 'unblacklist_domain':
+            ret_val = self._handle_unblacklist_domain(param)
+        elif action_id == 'blacklist_ip':
+            ret_val = self._handle_blacklist_ip(param)
+        elif action_id == 'unblacklist_ip':
+            ret_val = self._handle_unblacklist_ip(param)
 
         return ret_val
 
