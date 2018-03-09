@@ -1,7 +1,7 @@
 {
     "appid": "fecc12e1-1a5c-43ed-b081-774522f20650",
     "name": "Symantec Messaging Gateway",
-    "description": "This app integrates with an instance of Symantec Messaging Gateway to perform containment actions",
+    "description": "This app integrates with an instance of Symantec Messaging Gateway to perform containment and corrective actions",
     "type": "network security",
     "product_vendor": "Symantec",
     "logo": "logo_symantec.svg",
@@ -47,7 +47,7 @@
         {
             "action": "test connectivity",
             "identifier": "test_connectivity",
-            "description": "Validate the asset configuration for connectivity using supplied configuration",
+            "description": "Validate the supplied credentials with the SMG server",
             "verbose": "",
             "type": "test",
             "read_only": true,
