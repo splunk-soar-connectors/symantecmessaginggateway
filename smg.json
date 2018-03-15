@@ -302,7 +302,7 @@
             "undo": "blacklist domain",
             "parameters": {
                 "domain": {
-                    "description": "Domain to blacklist",
+                    "description": "Domain to unblacklist",
                     "data_type": "string",
                     "required": true,
                     "primary": true,
@@ -460,7 +460,7 @@
             "undo": "blacklist ip",
             "parameters": {
                 "ip": {
-                    "description": "IP to blacklist",
+                    "description": "IP to unblacklist",
                     "data_type": "string",
                     "required": true,
                     "primary": true,
