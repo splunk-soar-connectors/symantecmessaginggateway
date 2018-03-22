@@ -163,7 +163,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        if item_type == 'ip':
+        if item_type == 'IP':
             sender_group = '1|1'
         else:
             sender_group = '1|3'
@@ -187,7 +187,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        return phantom.APP_SUCCESS
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully blacklisted {0}".format(item_type))
 
     def _unblacklist_item(self, action_result, item, item_type):
 
@@ -199,7 +199,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        if item_type == 'ip':
+        if item_type == 'IP':
             sender_group = '1|1'
         else:
             sender_group = '1|3'
@@ -214,6 +214,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if not member_table:
             return action_result.set_status(phantom.APP_ERROR, "Could not find member list table")
 
+        item_id = None
         member_tags = soup.findAll('tr')
         if not member_tags:
             return action_result.set_status(phantom.APP_ERROR, "Could not find any items in bad senders list")
@@ -228,6 +229,9 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
+        if not item_id:
+            return action_result.set_status(phantom.APP_SUCCESS, "Given value not found in blacklist. Item cannot be unblacklisted.")
+
         params = {'symantec.brightmail.key.TOKEN': self._token, 'selectedGroupMembers': item_id, 'view': 'badSenders', 'selectedSenderGroups': '1|3'}
         ret_val, resp = self._make_rest_call('/reputation/sender-group/deleteSender.do', action_result, params=params)
         if phantom.is_fail(ret_val):
@@ -238,73 +242,49 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        return phantom.APP_SUCCESS
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully unblacklisted {0}".format(item_type))
 
     def _handle_blacklist_email(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        ret_val = self._blacklist_item(action_result, param['email'], 'email')
-        if phantom.is_fail(ret_val):
-            return ret_val
-
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully blacklisted email")
+        return self._blacklist_item(action_result, param['email'], 'email')
 
     def _handle_unblacklist_email(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        ret_val = self._unblacklist_item(action_result, param['email'], 'email')
-        if phantom.is_fail(ret_val):
-            return ret_val
-
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully unblacklisted email")
+        return self._unblacklist_item(action_result, param['email'], 'email')
 
     def _handle_blacklist_domain(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        ret_val = self._blacklist_item(action_result, param['domain'], 'domain')
-        if phantom.is_fail(ret_val):
-            return ret_val
-
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully blacklisted domain")
+        return self._blacklist_item(action_result, param['domain'], 'domain')
 
     def _handle_unblacklist_domain(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        ret_val = self._unblacklist_item(action_result, param['domain'], 'domain')
-        if phantom.is_fail(ret_val):
-            return ret_val
-
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully unblacklisted domain")
+        return self._unblacklist_item(action_result, param['domain'], 'domain')
 
     def _handle_blacklist_ip(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        ret_val = self._blacklist_item(action_result, param['ip'], 'ip')
-        if phantom.is_fail(ret_val):
-            return ret_val
-
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully blacklisted IP")
+        return self._blacklist_item(action_result, param['ip'], 'IP')
 
     def _handle_unblacklist_ip(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        ret_val = self._unblacklist_item(action_result, param['ip'], 'ip')
-        if phantom.is_fail(ret_val):
-            return ret_val
-
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully unblacklisted IP")
+        return self._unblacklist_item(action_result, param['ip'], 'IP')
 
     def handle_action(self, param):
 
