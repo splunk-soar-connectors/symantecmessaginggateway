@@ -142,7 +142,10 @@ class SymantecMessagingGatewayConnector(BaseConnector):
 
     def _handle_test_connectivity(self, param):
 
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        SYMANTECCAS_CONNECTION_TEST_MSG = "Querying endpoint to test the connectivity"
+
+        self.save_progress(SYMANTECCAS_CONNECTION_TEST_MSG)
+
         action_result = self.add_action_result(ActionResult(dict(param)))
 
         if phantom.is_fail(self._login(action_result)):
