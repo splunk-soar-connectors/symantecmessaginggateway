@@ -212,27 +212,48 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        soup = BeautifulSoup(resp.text, "html.parser")
-        member_table = soup.find('table', {'id': 'membersList'})
-        if not member_table:
-            return action_result.set_status(phantom.APP_ERROR, "Could not find member list table")
-
-        item_id = None
-        member_tags = soup.findAll('tr')
-        if not member_tags:
-            return action_result.set_status(phantom.APP_ERROR, "Could not find any items in bad senders list")
-        for tag in member_tags:
-            if item in tag.text:
-                checkbox = tag.find('input', {'name': 'selectedGroupMembers'})
-                if not checkbox:
-                    return action_result.set_status(phantom.APP_ERROR, "Could not find item ID")
-                item_id = checkbox['value']
-
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/addSender.do', action_result, params=params)
+        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders', 'selectedSenderGroups': sender_group, 'entriesPerPage': 500}
+        ret_val, resp = self._make_rest_call('/reputation/sender-group/changePageSize.do', action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        if not item_id:
+        found = False
+        cur_page = 1
+
+        while True:
+
+            soup = BeautifulSoup(resp.text, "html.parser")
+            member_table = soup.find('table', {'id': 'membersList'})
+            if not member_table:
+                return action_result.set_status(phantom.APP_ERROR, "Could not find member list table")
+
+            item_id = None
+            member_tags = soup.findAll('tr')
+            if not member_tags:
+                return action_result.set_status(phantom.APP_ERROR, "Could not find any items in bad senders list")
+            for tag in member_tags:
+                if item in tag.text:
+                    checkbox = tag.find('input', {'name': 'selectedGroupMembers'})
+                    if not checkbox:
+                        return action_result.set_status(phantom.APP_ERROR, "Could not find item ID")
+                    item_id = checkbox['value']
+                    found = True
+                    break
+
+            if found:
+                break
+
+            next_button = soup.find('button', {'id': 'nextButton'})
+            if 'disabled' in next_button.attrs:
+                break
+
+            params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders', 'selectedSenderGroups': sender_group, 'entriesPerPage': 500, 'pageNumber': cur_page}
+            ret_val, resp = self._make_rest_call('/reputation/sender-group/viewNextPage.do', action_result, params=params)
+            if phantom.is_fail(ret_val):
+                return ret_val
+            cur_page += 1
+
+        if not found:
             return action_result.set_status(phantom.APP_SUCCESS, "Given value not found in blacklist. Item cannot be unblacklisted.")
 
         params = {'symantec.brightmail.key.TOKEN': self._token, 'selectedGroupMembers': item_id, 'view': 'badSenders', 'selectedSenderGroups': '1|3'}
