@@ -9,12 +9,12 @@
     "product_name": "Messaging Gateway",
     "product_version_regex": ".*",
     "publisher": "Phantom",
-    "license": "Copyright (c) Phantom Cyber Corporation, 2018",
+    "license": "Copyright (c) 2018 Splunk Inc.",
     "app_version": "1.0.5",
     "utctime_updated": "2018-06-14T18:51:08.000000Z",
     "package_name": "phantom_symantecmessaginggateway",
     "main_module": "smg_connector.pyc",
-    "min_phantom_version": "3.0.284",
+    "min_phantom_version": "3.5.210",
     "app_wizard_version": "1.0.0",
     "configuration": {
         "url": {
@@ -77,18 +77,6 @@
             },
             "output": [
                 {
-                    "data_path": "action_result.parameter.email",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ],
-                    "column_name": "email",
-                    "column_order": 0,
-                    "example_values": [
-                        "badperson@badplace.com"
-                    ]
-                },
-                {
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "column_name": "status",
@@ -98,12 +86,34 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.email",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "column_name": "email",
+                    "column_order": 0,
+                    "example_values": [
+                        "splunk@splunk.com",
+                        "splunk@splunk.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "",
+                        "Successfully blacklisted email"
                     ]
                 },
                 {
@@ -119,14 +129,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
                 }
             ],
             "render": {
@@ -156,18 +158,6 @@
             },
             "output": [
                 {
-                    "data_path": "action_result.parameter.email",
-                    "data_type": "string",
-                    "contains": [
-                        "email"
-                    ],
-                    "column_name": "email",
-                    "column_order": 0,
-                    "example_values": [
-                        "badperson@badplace.com"
-                    ]
-                },
-                {
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "column_name": "status",
@@ -177,12 +167,34 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.email",
+                    "data_type": "string",
+                    "contains": [
+                        "email"
+                    ],
+                    "column_name": "email",
+                    "column_order": 0,
+                    "example_values": [
+                        "splunk@splunk.com",
+                        "splunk@splunk.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "",
+                        "Successfully unblacklisted email"
                     ]
                 },
                 {
@@ -198,14 +210,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
                 }
             ],
             "render": {
@@ -228,24 +232,13 @@
                     "required": true,
                     "primary": true,
                     "contains": [
-                        "domain"
+                        "domain",
+                        "url"
                     ],
                     "order": 0
                 }
             },
             "output": [
-                {
-                    "data_path": "action_result.parameter.domain",
-                    "data_type": "string",
-                    "contains": [
-                        "domain"
-                    ],
-                    "column_name": "domain",
-                    "column_order": 0,
-                    "example_values": [
-                        "badplace.com"
-                    ]
-                },
                 {
                     "data_path": "action_result.status",
                     "data_type": "string",
@@ -256,12 +249,34 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.domain",
+                    "data_type": "string",
+                    "contains": [
+                        "domain",
+                        "url"
+                    ],
+                    "column_name": "domain",
+                    "column_order": 0,
+                    "example_values": [
+                        "splunk.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "",
+                        "Successfully blacklisted domain"
                     ]
                 },
                 {
@@ -277,14 +292,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
                 }
             ],
             "render": {
@@ -307,24 +314,13 @@
                     "required": true,
                     "primary": true,
                     "contains": [
-                        "domain"
+                        "domain",
+                        "url"
                     ],
                     "order": 0
                 }
             },
             "output": [
-                {
-                    "data_path": "action_result.parameter.domain",
-                    "data_type": "string",
-                    "contains": [
-                        "domain"
-                    ],
-                    "column_name": "domain",
-                    "column_order": 0,
-                    "example_values": [
-                        "badplace.com"
-                    ]
-                },
                 {
                     "data_path": "action_result.status",
                     "data_type": "string",
@@ -335,12 +331,35 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.domain",
+                    "data_type": "string",
+                    "contains": [
+                        "domain",
+                        "url"
+                    ],
+                    "column_name": "domain",
+                    "column_order": 0,
+                    "example_values": [
+                        "splunk.com",
+                        "www.splunk.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "",
+                        "Given value not found in blacklist. Item cannot be unblacklisted."
                     ]
                 },
                 {
@@ -356,14 +375,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
                 }
             ],
             "render": {
@@ -393,18 +404,6 @@
             },
             "output": [
                 {
-                    "data_path": "action_result.parameter.ip",
-                    "data_type": "string",
-                    "contains": [
-                        "ip"
-                    ],
-                    "column_name": "ip",
-                    "column_order": 0,
-                    "example_values": [
-                        "10.10.10.10"
-                    ]
-                },
-                {
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "column_name": "status",
@@ -414,12 +413,34 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.ip",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ],
+                    "column_name": "ip",
+                    "column_order": 0,
+                    "example_values": [
+                        "10.10.10.10",
+                        "3.3.3.1"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "",
+                        "Successfully blacklisted IP"
                     ]
                 },
                 {
@@ -435,14 +456,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
                 }
             ],
             "render": {
@@ -472,18 +485,6 @@
             },
             "output": [
                 {
-                    "data_path": "action_result.parameter.ip",
-                    "data_type": "string",
-                    "contains": [
-                        "ip"
-                    ],
-                    "column_name": "IP",
-                    "column_order": 0,
-                    "example_values": [
-                        "10.10.10.10"
-                    ]
-                },
-                {
                     "data_path": "action_result.status",
                     "data_type": "string",
                     "column_name": "status",
@@ -493,12 +494,34 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.parameter.ip",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ],
+                    "column_name": "IP",
+                    "column_order": 0,
+                    "example_values": [
+                        "10.10.10.10",
+                        "3.3.3.1"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "",
+                        "Successfully unblacklisted IP"
                     ]
                 },
                 {
@@ -514,14 +537,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
                 }
             ],
             "render": {
