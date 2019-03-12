@@ -8,13 +8,13 @@
     "logo_dark": "logo_symantec_dark.svg",
     "product_name": "Messaging Gateway",
     "product_version_regex": ".*",
-    "publisher": "Phantom",
-    "license": "Copyright (c) 2018 Splunk Inc.",
+    "publisher": "Splunk",
+    "license": "Copyright (c) 2018-2019 Splunk Inc.",
     "app_version": "1.0.7",
     "utctime_updated": "2018-12-07T01:16:47.000000Z",
     "package_name": "phantom_symantecmessaginggateway",
     "main_module": "smg_connector.pyc",
-    "min_phantom_version": "3.5.210",
+    "min_phantom_version": "4.0.1068",
     "app_wizard_version": "1.0.0",
     "configuration": {
         "url": {
