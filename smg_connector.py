@@ -120,7 +120,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
                 'lastlogin': lastlogin,
                 'username': config['username'],
                 'password': config['password']
-            }
+        }
 
         ret_val, resp = self._make_rest_call('/login.do', action_result, params=params)
 
@@ -251,7 +251,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if not found:
             return action_result.set_status(phantom.APP_SUCCESS, "Given value not found in blocklist. Item cannot be unblocklisted.")
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'selectedGroupMembers': item_id, 'view': 'badSenders', 'selectedSenderGroups': '1|3'}
+        params = {'symantec.brightmail.key.TOKEN': self._token, 'selectedGroupMembers': item_id, 'view': 'badSenders', 'selectedSenderGroups': sender_group}
         ret_val, resp = self._make_rest_call('/reputation/sender-group/deleteSender.do', action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
