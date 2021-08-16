@@ -1,5 +1,5 @@
 # File: smg_connector.py
-# Copyright (c) 2018-2019 Splunk Inc.
+# Copyright (c) 2018-2021 Splunk Inc.
 #
 # SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
 # without a valid written license from Splunk Inc. is PROHIBITED.
@@ -55,6 +55,9 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         try:
             soup = BeautifulSoup(response.text, "html.parser")
             error_text = soup.text
+            # Remove the script, style, footer and navigation part from the HTML message
+            for element in soup(["script", "style", "footer", "nav"]):
+                element.extract()
             split_lines = error_text.split('\n')
             split_lines = [x.strip() for x in split_lines if x.strip()]
             error_text = '\n'.join(split_lines)
@@ -89,7 +92,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
                             verify=config.get('verify_server_cert', False),
                             params=params)
         except Exception as e:
-            return RetVal(action_result.set_status( phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(str(e))), resp_json)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(str(e))), resp_json)
 
         if not r:
             return self._process_html_response(r, action_result)
@@ -117,7 +120,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
                 'lastlogin': lastlogin,
                 'username': config['username'],
                 'password': config['password']
-            }
+        }
 
         ret_val, resp = self._make_rest_call('/login.do', action_result, params=params)
 
@@ -148,7 +151,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         self.save_progress("Test Connectivity Passed")
         return action_result.set_status(phantom.APP_SUCCESS)
 
-    def _blacklist_item(self, action_result, item, item_type):
+    def _blocklist_item(self, action_result, item, item_type):
 
         if phantom.is_fail(self._login(action_result)):
             self.debug_print("Login Failed")
@@ -182,9 +185,9 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully blacklisted {0}".format(item_type))
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully blocklisted {0}".format(item_type))
 
-    def _unblacklist_item(self, action_result, item, item_type):
+    def _unblocklist_item(self, action_result, item, item_type):
 
         if phantom.is_fail(self._login(action_result)):
             self.debug_print("Login Failed")
@@ -246,9 +249,9 @@ class SymantecMessagingGatewayConnector(BaseConnector):
             cur_page += 1
 
         if not found:
-            return action_result.set_status(phantom.APP_SUCCESS, "Given value not found in blacklist. Item cannot be unblacklisted.")
+            return action_result.set_status(phantom.APP_SUCCESS, "Given value not found in blocklist. Item cannot be unblocklisted.")
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'selectedGroupMembers': item_id, 'view': 'badSenders', 'selectedSenderGroups': '1|3'}
+        params = {'symantec.brightmail.key.TOKEN': self._token, 'selectedGroupMembers': item_id, 'view': 'badSenders', 'selectedSenderGroups': sender_group}
         ret_val, resp = self._make_rest_call('/reputation/sender-group/deleteSender.do', action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
@@ -258,49 +261,49 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully unblacklisted {0}".format(item_type))
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully unblocklisted {0}".format(item_type))
 
-    def _handle_blacklist_email(self, param):
-
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
-        action_result = self.add_action_result(ActionResult(dict(param)))
-
-        return self._blacklist_item(action_result, param['email'], 'email')
-
-    def _handle_unblacklist_email(self, param):
+    def _handle_blocklist_email(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._unblacklist_item(action_result, param['email'], 'email')
+        return self._blocklist_item(action_result, param['email'], 'email')
 
-    def _handle_blacklist_domain(self, param):
-
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
-        action_result = self.add_action_result(ActionResult(dict(param)))
-
-        return self._blacklist_item(action_result, param['domain'], 'domain')
-
-    def _handle_unblacklist_domain(self, param):
+    def _handle_unblocklist_email(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._unblacklist_item(action_result, param['domain'], 'domain')
+        return self._unblocklist_item(action_result, param['email'], 'email')
 
-    def _handle_blacklist_ip(self, param):
-
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
-        action_result = self.add_action_result(ActionResult(dict(param)))
-
-        return self._blacklist_item(action_result, param['ip'], 'IP')
-
-    def _handle_unblacklist_ip(self, param):
+    def _handle_blocklist_domain(self, param):
 
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._unblacklist_item(action_result, param['ip'], 'IP')
+        return self._blocklist_item(action_result, param['domain'], 'domain')
+
+    def _handle_unblocklist_domain(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        return self._unblocklist_item(action_result, param['domain'], 'domain')
+
+    def _handle_blocklist_ip(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        return self._blocklist_item(action_result, param['ip'], 'IP')
+
+    def _handle_unblocklist_ip(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        action_result = self.add_action_result(ActionResult(dict(param)))
+
+        return self._unblocklist_item(action_result, param['ip'], 'IP')
 
     def handle_action(self, param):
 
@@ -313,18 +316,18 @@ class SymantecMessagingGatewayConnector(BaseConnector):
 
         if action_id == 'test_connectivity':
             ret_val = self._handle_test_connectivity(param)
-        elif action_id == 'blacklist_email':
-            ret_val = self._handle_blacklist_email(param)
-        elif action_id == 'unblacklist_email':
-            ret_val = self._handle_unblacklist_email(param)
-        elif action_id == 'blacklist_domain':
-            ret_val = self._handle_blacklist_domain(param)
-        elif action_id == 'unblacklist_domain':
-            ret_val = self._handle_unblacklist_domain(param)
-        elif action_id == 'blacklist_ip':
-            ret_val = self._handle_blacklist_ip(param)
-        elif action_id == 'unblacklist_ip':
-            ret_val = self._handle_unblacklist_ip(param)
+        elif action_id == 'blocklist_email':
+            ret_val = self._handle_blocklist_email(param)
+        elif action_id == 'unblocklist_email':
+            ret_val = self._handle_unblocklist_email(param)
+        elif action_id == 'blocklist_domain':
+            ret_val = self._handle_blocklist_domain(param)
+        elif action_id == 'unblocklist_domain':
+            ret_val = self._handle_unblocklist_domain(param)
+        elif action_id == 'blocklist_ip':
+            ret_val = self._handle_blocklist_ip(param)
+        elif action_id == 'unblocklist_ip':
+            ret_val = self._handle_unblocklist_ip(param)
 
         return ret_val
 
@@ -356,8 +359,9 @@ if __name__ == '__main__':
 
     if (username and password):
         try:
-            print ("Accessing the Login page")
-            r = requests.get("https://127.0.0.1/login", verify=False)
+            print("Accessing the Login page")
+            login_url = BaseConnector._get_phantom_base_url() + '/login'
+            r = requests.get(login_url, verify=False)
             csrftoken = r.cookies['csrftoken']
 
             data = dict()
@@ -367,13 +371,12 @@ if __name__ == '__main__':
 
             headers = dict()
             headers['Cookie'] = 'csrftoken=' + csrftoken
-            headers['Referer'] = 'https://127.0.0.1/login'
+            headers['Referer'] = login_url
 
-            print ("Logging into Platform to get the session id")
-            r2 = requests.post("https://127.0.0.1/login", verify=False, data=data, headers=headers)
-            session_id = r2.cookies['sessionid']
+            print("Logging into Platform to get the session id")
+            r2 = requests.post(login_url, verify=False, data=data, headers=headers)
         except Exception as e:
-            print ("Unable to get session id from the platfrom. Error: " + str(e))
+            print("Unable to get session id from the platfrom. Error: " + str(e))
             exit(1)
 
     with open(args.input_test_json) as f:
@@ -389,6 +392,6 @@ if __name__ == '__main__':
             connector._set_csrf_info(csrftoken, headers['Referer'])
 
         ret_val = connector._handle_action(json.dumps(in_json), None)
-        print (json.dumps(json.loads(ret_val), indent=4))
+        print(json.dumps(json.loads(ret_val), indent=4))
 
     exit(0)
