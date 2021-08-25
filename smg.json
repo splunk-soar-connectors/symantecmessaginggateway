@@ -8,14 +8,18 @@
     "logo_dark": "logo_symantec_dark.svg",
     "product_name": "Messaging Gateway",
     "product_version_regex": ".*",
-    "publisher": "Phantom",
-    "license": "Copyright (c) Phantom Cyber Corporation, 2018",
-    "app_version": "1.0.4",
-    "utctime_updated": "2018-03-28T01:37:17.000000Z",
+    "publisher": "Splunk",
+    "license": "Copyright (c) 2018-2021 Splunk Inc.",
+    "app_version": "2.0.1",
+    "utctime_updated": "2021-08-16T11:44:59.000000Z",
     "package_name": "phantom_symantecmessaginggateway",
-    "main_module": "smg_connector.pyc",
-    "min_phantom_version": "3.0.284",
+    "main_module": "smg_connector.py",
+    "min_phantom_version": "4.9.39220",
+    "python_version": "3",
     "app_wizard_version": "1.0.0",
+    "latest_tested_versions": [
+        "Symantec Messaging Gateway v10.6.4-3"
+    ],
     "configuration": {
         "url": {
             "description": "URL",
@@ -26,7 +30,6 @@
         "verify_server_cert": {
             "description": "Verify Server Certificate",
             "data_type": "boolean",
-            "required": false,
             "default": false,
             "order": 1
         },
@@ -48,7 +51,6 @@
             "action": "test connectivity",
             "identifier": "test_connectivity",
             "description": "Validate the supplied credentials with the SMG server",
-            "verbose": "",
             "type": "test",
             "read_only": true,
             "parameters": {},
@@ -56,16 +58,16 @@
             "versions": "EQ(*)"
         },
         {
-            "action": "blacklist email",
-            "identifier": "blacklist_email",
+            "action": "blocklist email",
+            "identifier": "blocklist_email",
             "description": "Add an email to the bad sender list",
             "verbose": "This action will add an email address to the list of <b>Local Bad Sender Domains</b>.",
             "type": "contain",
             "read_only": false,
-            "undo": "unblacklist email",
+            "undo": "unblocklist email",
             "parameters": {
                 "email": {
-                    "description": "Email to blacklist",
+                    "description": "Email to blocklist",
                     "data_type": "string",
                     "required": true,
                     "primary": true,
@@ -77,25 +79,34 @@
             },
             "output": [
                 {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "column_name": "Status",
+                    "column_order": 1,
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
+                {
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "contains": [
                         "email"
                     ],
-                    "column_name": "email",
+                    "column_name": "Email",
                     "column_order": 0,
                     "example_values": [
-                        "badperson@badplace.com"
+                        "splunk@splunk.com"
                     ]
                 },
                 {
-                    "data_path": "action_result.status",
-                    "data_type": "string",
-                    "column_name": "status",
-                    "column_order": 1,
-                    "example_values": [
-                        "success"
-                    ]
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.message",
@@ -103,7 +114,7 @@
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "Successfully blocklisted email"
                     ]
                 },
                 {
@@ -119,14 +130,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
                 }
             ],
             "render": {
@@ -135,16 +138,16 @@
             "versions": "EQ(*)"
         },
         {
-            "action": "unblacklist email",
-            "identifier": "unblacklist_email",
+            "action": "unblocklist email",
+            "identifier": "unblocklist_email",
             "description": "Remove an email from the bad sender list",
             "verbose": "This action will remove an email address from the list of <b>Local Bad Sender Domains</b>.",
             "type": "correct",
             "read_only": false,
-            "undo": "blacklist email",
+            "undo": "blocklist email",
             "parameters": {
                 "email": {
-                    "description": "Email to unblacklist",
+                    "description": "Email to unblocklist",
                     "data_type": "string",
                     "required": true,
                     "primary": true,
@@ -155,26 +158,35 @@
                 }
             },
             "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "column_name": "Status",
+                    "column_order": 1,
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
                 {
                     "data_path": "action_result.parameter.email",
                     "data_type": "string",
                     "contains": [
                         "email"
                     ],
-                    "column_name": "email",
+                    "column_name": "Email",
                     "column_order": 0,
                     "example_values": [
-                        "badperson@badplace.com"
+                        "splunk@splunk.com"
                     ]
                 },
                 {
-                    "data_path": "action_result.status",
-                    "data_type": "string",
-                    "column_name": "status",
-                    "column_order": 1,
-                    "example_values": [
-                        "success"
-                    ]
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.message",
@@ -182,7 +194,7 @@
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "Successfully unblocklisted email"
                     ]
                 },
                 {
@@ -198,14 +210,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
                 }
             ],
             "render": {
@@ -214,46 +218,57 @@
             "versions": "EQ(*)"
         },
         {
-            "action": "blacklist domain",
-            "identifier": "blacklist_domain",
+            "action": "blocklist domain",
+            "identifier": "blocklist_domain",
             "description": "Add a domain to the bad sender list",
             "verbose": "This action will add a domain to the list of <b>Local Bad Sender Domains</b>.",
             "type": "contain",
             "read_only": false,
-            "undo": "unblacklist domain",
+            "undo": "unblocklist domain",
             "parameters": {
                 "domain": {
-                    "description": "Domain to blacklist",
+                    "description": "Domain to blocklist",
                     "data_type": "string",
                     "required": true,
                     "primary": true,
                     "contains": [
-                        "domain"
+                        "domain",
+                        "url"
                     ],
                     "order": 0
                 }
             },
             "output": [
                 {
-                    "data_path": "action_result.parameter.domain",
+                    "data_path": "action_result.status",
                     "data_type": "string",
-                    "contains": [
-                        "domain"
-                    ],
-                    "column_name": "domain",
-                    "column_order": 0,
+                    "column_name": "Status",
+                    "column_order": 1,
                     "example_values": [
-                        "badplace.com"
+                        "success",
+                        "failed"
                     ]
                 },
                 {
-                    "data_path": "action_result.status",
+                    "data_path": "action_result.parameter.domain",
                     "data_type": "string",
-                    "column_name": "status",
-                    "column_order": 1,
+                    "contains": [
+                        "domain",
+                        "url"
+                    ],
+                    "column_name": "Domain",
+                    "column_order": 0,
                     "example_values": [
-                        "success"
+                        "splunk.com"
                     ]
+                },
+                {
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.message",
@@ -261,7 +276,7 @@
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "Successfully blocklisted domain"
                     ]
                 },
                 {
@@ -277,14 +292,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
                 }
             ],
             "render": {
@@ -293,46 +300,58 @@
             "versions": "EQ(*)"
         },
         {
-            "action": "unblacklist domain",
-            "identifier": "unblacklist_domain",
+            "action": "unblocklist domain",
+            "identifier": "unblocklist_domain",
             "description": "Remove a domain from the bad sender list",
             "verbose": "This action will remove a domain from the list of <b>Local Bad Sender Domains</b>.",
             "type": "correct",
             "read_only": false,
-            "undo": "blacklist domain",
+            "undo": "blocklist domain",
             "parameters": {
                 "domain": {
-                    "description": "Domain to unblacklist",
+                    "description": "Domain to unblocklist",
                     "data_type": "string",
                     "required": true,
                     "primary": true,
                     "contains": [
-                        "domain"
+                        "domain",
+                        "url"
                     ],
                     "order": 0
                 }
             },
             "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "column_name": "Status",
+                    "column_order": 1,
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
                 {
                     "data_path": "action_result.parameter.domain",
                     "data_type": "string",
                     "contains": [
-                        "domain"
+                        "domain",
+                        "url"
                     ],
-                    "column_name": "domain",
+                    "column_name": "Domain",
                     "column_order": 0,
                     "example_values": [
-                        "badplace.com"
+                        "splunk.com",
+                        "www.splunk.com"
                     ]
                 },
                 {
-                    "data_path": "action_result.status",
-                    "data_type": "string",
-                    "column_name": "status",
-                    "column_order": 1,
-                    "example_values": [
-                        "success"
-                    ]
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.message",
@@ -340,7 +359,7 @@
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "Given value not found in blocklist. Item cannot be unblocklisted."
                     ]
                 },
                 {
@@ -356,14 +375,6 @@
                     "example_values": [
                         1
                     ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
                 }
             ],
             "render": {
@@ -372,16 +383,16 @@
             "versions": "EQ(*)"
         },
         {
-            "action": "blacklist ip",
-            "identifier": "blacklist_ip",
+            "action": "blocklist ip",
+            "identifier": "blocklist_ip",
             "description": "Add an IP to the bad sender list",
             "verbose": "This action will add an IP address to the list of <b>Local Bad Sender IPs</b>.",
             "type": "contain",
             "read_only": false,
-            "undo": "unblacklist ip",
+            "undo": "unblocklist ip",
             "parameters": {
                 "ip": {
-                    "description": "IP to blacklist",
+                    "description": "IP to blocklist",
                     "data_type": "string",
                     "required": true,
                     "primary": true,
@@ -392,85 +403,16 @@
                 }
             },
             "output": [
-                {
-                    "data_path": "action_result.parameter.ip",
-                    "data_type": "string",
-                    "contains": [
-                        "ip"
-                    ],
-                    "column_name": "ip",
-                    "column_order": 0,
-                    "example_values": [
-                        "10.10.10.10"
-                    ]
-                },
                 {
                     "data_path": "action_result.status",
                     "data_type": "string",
-                    "column_name": "status",
+                    "column_name": "Status",
                     "column_order": 1,
                     "example_values": [
-                        "success"
+                        "success",
+                        "failed"
                     ]
                 },
-                {
-                    "data_path": "action_result.message",
-                    "data_type": "string",
-                    "column_name": "Message",
-                    "column_order": 2,
-                    "example_values": [
-                        ""
-                    ]
-                },
-                {
-                    "data_path": "summary.total_objects",
-                    "data_type": "numeric",
-                    "example_values": [
-                        1
-                    ]
-                },
-                {
-                    "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric",
-                    "example_values": [
-                        1
-                    ]
-                },
-                {
-                    "data_path": "action_result.data",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
-                }
-            ],
-            "render": {
-                "type": "table"
-            },
-            "versions": "EQ(*)"
-        },
-        {
-            "action": "unblacklist ip",
-            "identifier": "unblacklist_ip",
-            "description": "Remove an IP from the bad sender list",
-            "verbose": "This action will remove an IP address from the list of <b>Local Bad Sender IPs</b>.",
-            "type": "correct",
-            "read_only": false,
-            "undo": "blacklist ip",
-            "parameters": {
-                "ip": {
-                    "description": "IP to unblacklist",
-                    "data_type": "string",
-                    "required": true,
-                    "primary": true,
-                    "contains": [
-                        "ip"
-                    ],
-                    "order": 0
-                }
-            },
-            "output": [
                 {
                     "data_path": "action_result.parameter.ip",
                     "data_type": "string",
@@ -480,17 +422,17 @@
                     "column_name": "IP",
                     "column_order": 0,
                     "example_values": [
-                        "10.10.10.10"
+                        "10.10.10.10",
+                        "3.3.3.1"
                     ]
                 },
                 {
-                    "data_path": "action_result.status",
-                    "data_type": "string",
-                    "column_name": "status",
-                    "column_order": 1,
-                    "example_values": [
-                        "success"
-                    ]
+                    "data_path": "action_result.data",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.message",
@@ -498,7 +440,7 @@
                     "column_name": "Message",
                     "column_order": 2,
                     "example_values": [
-                        ""
+                        "Successfully blocklisted IP"
                     ]
                 },
                 {
@@ -514,6 +456,56 @@
                     "example_values": [
                         1
                     ]
+                }
+            ],
+            "render": {
+                "type": "table"
+            },
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "unblocklist ip",
+            "identifier": "unblocklist_ip",
+            "description": "Remove an IP from the bad sender list",
+            "verbose": "This action will remove an IP address from the list of <b>Local Bad Sender IPs</b>.",
+            "type": "correct",
+            "read_only": false,
+            "undo": "blocklist ip",
+            "parameters": {
+                "ip": {
+                    "description": "IP to unblocklist",
+                    "data_type": "string",
+                    "required": true,
+                    "primary": true,
+                    "contains": [
+                        "ip"
+                    ],
+                    "order": 0
+                }
+            },
+            "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "column_name": "Status",
+                    "column_order": 1,
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.ip",
+                    "data_type": "string",
+                    "contains": [
+                        "ip"
+                    ],
+                    "column_name": "IP",
+                    "column_order": 0,
+                    "example_values": [
+                        "10.10.10.10",
+                        "3.3.3.1"
+                    ]
                 },
                 {
                     "data_path": "action_result.data",
@@ -522,6 +514,29 @@
                 {
                     "data_path": "action_result.summary",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "column_name": "Message",
+                    "column_order": 2,
+                    "example_values": [
+                        "Successfully unblocklisted IP"
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "render": {
