@@ -15,13 +15,15 @@
 #
 #
 # Phantom App imports
-import phantom.app as phantom
-from phantom.base_connector import BaseConnector
-from phantom.action_result import ActionResult
-
-import requests
 import json
+
+import phantom.app as phantom
+import requests
 from bs4 import BeautifulSoup
+from phantom.action_result import ActionResult
+from phantom.base_connector import BaseConnector
+
+DEFAULT_REQUEST_TIMEOUT = 30  # in seconds
 
 
 class RetVal(tuple):
@@ -217,7 +219,8 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             return ret_val
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders', 'selectedSenderGroups': sender_group, 'entriesPerPage': 500}
+        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders',
+            'selectedSenderGroups': sender_group, 'entriesPerPage': 500}
         ret_val, resp = self._make_rest_call('/reputation/sender-group/changePageSize.do', action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
@@ -252,7 +255,8 @@ class SymantecMessagingGatewayConnector(BaseConnector):
             if 'disabled' in next_button.attrs:
                 break
 
-            params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders', 'selectedSenderGroups': sender_group, 'entriesPerPage': 500, 'pageNumber': cur_page}
+            params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders',
+                'selectedSenderGroups': sender_group, 'entriesPerPage': 500, 'pageNumber': cur_page}
             ret_val, resp = self._make_rest_call('/reputation/sender-group/viewNextPage.do', action_result, params=params)
             if phantom.is_fail(ret_val):
                 return ret_val
@@ -261,7 +265,8 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if not found:
             return action_result.set_status(phantom.APP_SUCCESS, "Given value not found in blocklist. Item cannot be unblocklisted.")
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'selectedGroupMembers': item_id, 'view': 'badSenders', 'selectedSenderGroups': sender_group}
+        params = {'symantec.brightmail.key.TOKEN': self._token, 'selectedGroupMembers': item_id,
+            'view': 'badSenders', 'selectedSenderGroups': sender_group}
         ret_val, resp = self._make_rest_call('/reputation/sender-group/deleteSender.do', action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
@@ -346,6 +351,7 @@ if __name__ == '__main__':
 
     # import pudb
     import argparse
+    import sys
 
     # pudb.set_trace()
 
@@ -354,12 +360,14 @@ if __name__ == '__main__':
     argparser.add_argument('input_test_json', help='Input Test JSON file')
     argparser.add_argument('-u', '--username', help='username', required=False)
     argparser.add_argument('-p', '--password', help='password', required=False)
+    argparser.add_argument('-v', '--verify', action='store_true', help='verify', required=False, default=False)
 
     args = argparser.parse_args()
     session_id = None
 
     username = args.username
     password = args.password
+    verify = args.verify
 
     if (username is not None and password is None):
 
@@ -371,7 +379,7 @@ if __name__ == '__main__':
         try:
             print("Accessing the Login page")
             login_url = BaseConnector._get_phantom_base_url() + '/login'
-            r = requests.get(login_url, verify=False)
+            r = requests.get(login_url, verify=verify, timeout=DEFAULT_REQUEST_TIMEOUT)
             csrftoken = r.cookies['csrftoken']
 
             data = dict()
@@ -384,10 +392,10 @@ if __name__ == '__main__':
             headers['Referer'] = login_url
 
             print("Logging into Platform to get the session id")
-            r2 = requests.post(login_url, verify=False, data=data, headers=headers)
+            r2 = requests.post(login_url, verify=verify, timeout=DEFAULT_REQUEST_TIMEOUT, data=data, headers=headers)
         except Exception as e:
             print("Unable to get session id from the platfrom. Error: " + str(e))
-            exit(1)
+            sys.exit(1)
 
     with open(args.input_test_json) as f:
         in_json = f.read()
@@ -404,4 +412,4 @@ if __name__ == '__main__':
         ret_val = connector._handle_action(json.dumps(in_json), None)
         print(json.dumps(json.loads(ret_val), indent=4))
 
-    exit(0)
+    sys.exit(0)
