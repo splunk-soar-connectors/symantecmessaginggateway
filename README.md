@@ -6,7 +6,7 @@ Connector Version: 2\.0\.4
 Product Vendor: Symantec  
 Product Name: Messaging Gateway  
 Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 5\.0\.0  
+Minimum Product Version: 5\.2\.0  
 
 This app integrates with an instance of Symantec Messaging Gateway to perform containment and corrective actions
 
