@@ -14,7 +14,7 @@
     "utctime_updated": "2022-01-27T20:58:55.000000Z",
     "package_name": "phantom_symantecmessaginggateway",
     "main_module": "smg_connector.py",
-    "min_phantom_version": "5.0.0",
+    "min_phantom_version": "5.2.0",
     "python_version": "3",
     "fips_compliant": true,
     "app_wizard_version": "1.0.0",
