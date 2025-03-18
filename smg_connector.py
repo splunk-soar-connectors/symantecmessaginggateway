@@ -1,6 +1,6 @@
 # File: smg_connector.py
 #
-# Copyright (c) 2018-2024 Splunk Inc.
+# Copyright (c) 2018-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ from bs4 import BeautifulSoup
 from phantom.action_result import ActionResult
 from phantom.base_connector import BaseConnector
 
+
 DEFAULT_REQUEST_TIMEOUT = 30  # in seconds
 
 
@@ -32,11 +33,9 @@ class RetVal(tuple):
 
 
 class SymantecMessagingGatewayConnector(BaseConnector):
-
     def __init__(self):
-
         # Call the BaseConnectors init first
-        super(SymantecMessagingGatewayConnector, self).__init__()
+        super().__init__()
 
         self._state = None
         self._token = None
@@ -44,23 +43,20 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         self._base_url = None
 
     def initialize(self):
-
         config = self.get_config()
 
         self._state = self.load_state()
         self._session = requests.Session()
-        self._base_url = "{0}/{1}".format(config['url'].strip('/'), 'brightmail')
+        self._base_url = "{}/{}".format(config["url"].strip("/"), "brightmail")
 
         return phantom.APP_SUCCESS
 
     def finalize(self):
-
         # Save the state, this data is saved accross actions and app upgrades
         self.save_state(self._state)
         return phantom.APP_SUCCESS
 
     def _process_html_response(self, response, action_result):
-
         # An html response, treat it like an error
         status_code = response.status_code
 
@@ -70,21 +66,19 @@ class SymantecMessagingGatewayConnector(BaseConnector):
             # Remove the script, style, footer and navigation part from the HTML message
             for element in soup(["script", "style", "footer", "nav"]):
                 element.extract()
-            split_lines = error_text.split('\n')
+            split_lines = error_text.split("\n")
             split_lines = [x.strip() for x in split_lines if x.strip()]
-            error_text = '\n'.join(split_lines)
+            error_text = "\n".join(split_lines)
         except:
             error_text = "Cannot parse error details"
 
-        message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code,
-                error_text)
+        message = f"Status Code: {status_code}. Data from server:\n{error_text}\n"
 
-        message = message.replace('{', '{{').replace('}', '}}')
+        message = message.replace("{", "{{").replace("}", "}}")
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
     def _make_rest_call(self, endpoint, action_result, headers=None, params=None, data=None, method="get"):
-
         config = self.get_config()
 
         resp_json = None
@@ -92,19 +86,14 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         try:
             request_func = getattr(self._session, method)
         except AttributeError:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)), resp_json)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Invalid method: {method}"), resp_json)
 
         url = self._base_url + endpoint
 
         try:
-            r = request_func(
-                            url,
-                            data=data,
-                            headers=headers,
-                            verify=config.get('verify_server_cert', False),
-                            params=params)
+            r = request_func(url, data=data, headers=headers, verify=config.get("verify_server_cert", False), params=params)
         except Exception as e:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(str(e))), resp_json)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Error Connecting to server. Details: {e!s}"), resp_json)
 
         if not r:
             return self._process_html_response(r, action_result)
@@ -112,43 +101,37 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         return RetVal(phantom.APP_SUCCESS, r)
 
     def _login(self, action_result):
-
         self.debug_print("Attempting login")
 
-        ret_val, resp = self._make_rest_call('/viewLogin.do', action_result)
+        ret_val, resp = self._make_rest_call("/viewLogin.do", action_result)
 
         if phantom.is_fail(ret_val):
             return ret_val
 
         soup = BeautifulSoup(resp.text, "html.parser")
-        found_tag = soup.find('input', {'name': 'lastlogin'})
+        found_tag = soup.find("input", {"name": "lastlogin"})
         if not found_tag:
             return action_result.set_status(phantom.APP_ERROR, "Could not find last login time in viewLogin response")
-        lastlogin = found_tag['value']
+        lastlogin = found_tag["value"]
 
         config = self.get_config()
 
-        params = {
-                'lastlogin': lastlogin,
-                'username': config['username'],
-                'password': config['password']
-        }
+        params = {"lastlogin": lastlogin, "username": config["username"], "password": config["password"]}
 
-        ret_val, resp = self._make_rest_call('/login.do', action_result, params=params)
+        ret_val, resp = self._make_rest_call("/login.do", action_result, params=params)
 
         if phantom.is_fail(ret_val):
             return ret_val
 
         soup = BeautifulSoup(resp.text, "html.parser")
-        found_tag = soup.find('input', {'name': 'symantec.brightmail.key.TOKEN'})
+        found_tag = soup.find("input", {"name": "symantec.brightmail.key.TOKEN"})
         if not found_tag:
             return action_result.set_status(phantom.APP_ERROR, "Could not find token in login response")
-        self._token = found_tag['value']
+        self._token = found_tag["value"]
 
         return phantom.APP_SUCCESS
 
     def _handle_test_connectivity(self, param):
-
         SYMANTECCAS_CONNECTION_TEST_MSG = "Querying endpoint to test the connectivity"
 
         self.save_progress(SYMANTECCAS_CONNECTION_TEST_MSG)
@@ -164,64 +147,66 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _blocklist_item(self, action_result, item, item_type):
-
         if phantom.is_fail(self._login(action_result)):
             self.debug_print("Login Failed")
             return action_result.get_status()
 
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/viewSenderGroup.do?view=badSenders', action_result)
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do?view=badSenders", action_result)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        if item_type == 'IP':
-            sender_group = '1|1'
+        if item_type == "IP":
+            sender_group = "1|1"
         else:
-            sender_group = '1|3'
+            sender_group = "1|3"
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders', 'selectedSenderGroups': sender_group}
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/viewSenderGroup.do', action_result, params=params)
+        params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders", "selectedSenderGroups": sender_group}
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/addSender.do', action_result, params=params)
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/addSender.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'addEditSenders': item, 'view': 'badSenders'}
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/saveSender.do', action_result, params=params)
+        params = {"symantec.brightmail.key.TOKEN": self._token, "addEditSenders": item, "view": "badSenders"}
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/saveSender.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders'}
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/saveGroup.do', action_result, params=params)
+        params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders"}
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/saveGroup.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully blocklisted {0}".format(item_type))
+        return action_result.set_status(phantom.APP_SUCCESS, f"Successfully blocklisted {item_type}")
 
     def _unblocklist_item(self, action_result, item, item_type):
-
         if phantom.is_fail(self._login(action_result)):
             self.debug_print("Login Failed")
             return action_result.get_status()
 
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/viewSenderGroup.do?view=badSenders', action_result)
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do?view=badSenders", action_result)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        if item_type == 'IP':
-            sender_group = '1|1'
+        if item_type == "IP":
+            sender_group = "1|1"
         else:
-            sender_group = '1|3'
+            sender_group = "1|3"
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders', 'selectedSenderGroups': sender_group}
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/viewSenderGroup.do', action_result, params=params)
+        params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders", "selectedSenderGroups": sender_group}
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders',
-            'selectedSenderGroups': sender_group, 'entriesPerPage': 500}
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/changePageSize.do', action_result, params=params)
+        params = {
+            "symantec.brightmail.key.TOKEN": self._token,
+            "view": "badSenders",
+            "selectedSenderGroups": sender_group,
+            "entriesPerPage": 500,
+        }
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/changePageSize.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
@@ -229,35 +214,39 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         cur_page = 1
 
         while True:
-
             soup = BeautifulSoup(resp.text, "html.parser")
-            member_table = soup.find('table', {'id': 'membersList'})
+            member_table = soup.find("table", {"id": "membersList"})
             if not member_table:
                 return action_result.set_status(phantom.APP_ERROR, "Could not find member list table")
 
             item_id = None
-            member_tags = soup.findAll('tr')
+            member_tags = soup.findAll("tr")
             if not member_tags:
                 return action_result.set_status(phantom.APP_ERROR, "Could not find any items in bad senders list")
             for tag in member_tags:
                 if item in tag.text:
-                    checkbox = tag.find('input', {'name': 'selectedGroupMembers'})
+                    checkbox = tag.find("input", {"name": "selectedGroupMembers"})
                     if not checkbox:
                         return action_result.set_status(phantom.APP_ERROR, "Could not find item ID")
-                    item_id = checkbox['value']
+                    item_id = checkbox["value"]
                     found = True
                     break
 
             if found:
                 break
 
-            next_button = soup.find('button', {'id': 'nextButton'})
-            if 'disabled' in next_button.attrs:
+            next_button = soup.find("button", {"id": "nextButton"})
+            if "disabled" in next_button.attrs:
                 break
 
-            params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders',
-                'selectedSenderGroups': sender_group, 'entriesPerPage': 500, 'pageNumber': cur_page}
-            ret_val, resp = self._make_rest_call('/reputation/sender-group/viewNextPage.do', action_result, params=params)
+            params = {
+                "symantec.brightmail.key.TOKEN": self._token,
+                "view": "badSenders",
+                "selectedSenderGroups": sender_group,
+                "entriesPerPage": 500,
+                "pageNumber": cur_page,
+            }
+            ret_val, resp = self._make_rest_call("/reputation/sender-group/viewNextPage.do", action_result, params=params)
             if phantom.is_fail(ret_val):
                 return ret_val
             cur_page += 1
@@ -265,63 +254,60 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         if not found:
             return action_result.set_status(phantom.APP_SUCCESS, "Given value not found in blocklist. Item cannot be unblocklisted.")
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'selectedGroupMembers': item_id,
-            'view': 'badSenders', 'selectedSenderGroups': sender_group}
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/deleteSender.do', action_result, params=params)
+        params = {
+            "symantec.brightmail.key.TOKEN": self._token,
+            "selectedGroupMembers": item_id,
+            "view": "badSenders",
+            "selectedSenderGroups": sender_group,
+        }
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/deleteSender.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        params = {'symantec.brightmail.key.TOKEN': self._token, 'view': 'badSenders'}
-        ret_val, resp = self._make_rest_call('/reputation/sender-group/saveGroup.do', action_result, params=params)
+        params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders"}
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/saveGroup.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully unblocklisted {0}".format(item_type))
+        return action_result.set_status(phantom.APP_SUCCESS, f"Successfully unblocklisted {item_type}")
 
     def _handle_blocklist_email(self, param):
-
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._blocklist_item(action_result, param['email'], 'email')
+        return self._blocklist_item(action_result, param["email"], "email")
 
     def _handle_unblocklist_email(self, param):
-
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._unblocklist_item(action_result, param['email'], 'email')
+        return self._unblocklist_item(action_result, param["email"], "email")
 
     def _handle_blocklist_domain(self, param):
-
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._blocklist_item(action_result, param['domain'], 'domain')
+        return self._blocklist_item(action_result, param["domain"], "domain")
 
     def _handle_unblocklist_domain(self, param):
-
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._unblocklist_item(action_result, param['domain'], 'domain')
+        return self._unblocklist_item(action_result, param["domain"], "domain")
 
     def _handle_blocklist_ip(self, param):
-
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._blocklist_item(action_result, param['ip'], 'IP')
+        return self._blocklist_item(action_result, param["ip"], "IP")
 
     def _handle_unblocklist_ip(self, param):
-
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._unblocklist_item(action_result, param['ip'], 'IP')
+        return self._unblocklist_item(action_result, param["ip"], "IP")
 
     def handle_action(self, param):
-
         ret_val = phantom.APP_SUCCESS
 
         # Get the action that we are supposed to execute for this App Run
@@ -329,26 +315,25 @@ class SymantecMessagingGatewayConnector(BaseConnector):
 
         self.debug_print("action_id", self.get_action_identifier())
 
-        if action_id == 'test_connectivity':
+        if action_id == "test_connectivity":
             ret_val = self._handle_test_connectivity(param)
-        elif action_id == 'blocklist_email':
+        elif action_id == "blocklist_email":
             ret_val = self._handle_blocklist_email(param)
-        elif action_id == 'unblocklist_email':
+        elif action_id == "unblocklist_email":
             ret_val = self._handle_unblocklist_email(param)
-        elif action_id == 'blocklist_domain':
+        elif action_id == "blocklist_domain":
             ret_val = self._handle_blocklist_domain(param)
-        elif action_id == 'unblocklist_domain':
+        elif action_id == "unblocklist_domain":
             ret_val = self._handle_unblocklist_domain(param)
-        elif action_id == 'blocklist_ip':
+        elif action_id == "blocklist_ip":
             ret_val = self._handle_blocklist_ip(param)
-        elif action_id == 'unblocklist_ip':
+        elif action_id == "unblocklist_ip":
             ret_val = self._handle_unblocklist_ip(param)
 
         return ret_val
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     # import pudb
     import argparse
     import sys
@@ -357,10 +342,10 @@ if __name__ == '__main__':
 
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('input_test_json', help='Input Test JSON file')
-    argparser.add_argument('-u', '--username', help='username', required=False)
-    argparser.add_argument('-p', '--password', help='password', required=False)
-    argparser.add_argument('-v', '--verify', action='store_true', help='verify', required=False, default=False)
+    argparser.add_argument("input_test_json", help="Input Test JSON file")
+    argparser.add_argument("-u", "--username", help="username", required=False)
+    argparser.add_argument("-p", "--password", help="password", required=False)
+    argparser.add_argument("-v", "--verify", action="store_true", help="verify", required=False, default=False)
 
     args = argparser.parse_args()
     session_id = None
@@ -369,27 +354,27 @@ if __name__ == '__main__':
     password = args.password
     verify = args.verify
 
-    if (username is not None and password is None):
-
+    if username is not None and password is None:
         # User specified a username but not a password, so ask
         import getpass
+
         password = getpass.getpass("Password: ")
 
-    if (username and password):
+    if username and password:
         try:
             print("Accessing the Login page")
-            login_url = BaseConnector._get_phantom_base_url() + '/login'
+            login_url = BaseConnector._get_phantom_base_url() + "/login"
             r = requests.get(login_url, verify=verify, timeout=DEFAULT_REQUEST_TIMEOUT)
-            csrftoken = r.cookies['csrftoken']
+            csrftoken = r.cookies["csrftoken"]
 
             data = dict()
-            data['username'] = username
-            data['password'] = password
-            data['csrfmiddlewaretoken'] = csrftoken
+            data["username"] = username
+            data["password"] = password
+            data["csrfmiddlewaretoken"] = csrftoken
 
             headers = dict()
-            headers['Cookie'] = 'csrftoken=' + csrftoken
-            headers['Referer'] = login_url
+            headers["Cookie"] = "csrftoken=" + csrftoken
+            headers["Referer"] = login_url
 
             print("Logging into Platform to get the session id")
             r2 = requests.post(login_url, verify=verify, timeout=DEFAULT_REQUEST_TIMEOUT, data=data, headers=headers)
@@ -405,9 +390,9 @@ if __name__ == '__main__':
         connector = SymantecMessagingGatewayConnector()
         connector.print_progress_message = True
 
-        if (session_id is not None):
-            in_json['user_session_token'] = session_id
-            connector._set_csrf_info(csrftoken, headers['Referer'])
+        if session_id is not None:
+            in_json["user_session_token"] = session_id
+            connector._set_csrf_info(csrftoken, headers["Referer"])
 
         ret_val = connector._handle_action(json.dumps(in_json), None)
         print(json.dumps(json.loads(ret_val), indent=4))
