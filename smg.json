@@ -9,7 +9,7 @@
     "product_name": "Messaging Gateway",
     "product_version_regex": ".*",
     "publisher": "Splunk",
-    "license": "Copyright (c) 2018-2024 Splunk Inc.",
+    "license": "Copyright (c) 2018-2025 Splunk Inc.",
     "app_version": "2.0.5",
     "utctime_updated": "2022-01-27T20:58:55.000000Z",
     "package_name": "phantom_symantecmessaginggateway",
