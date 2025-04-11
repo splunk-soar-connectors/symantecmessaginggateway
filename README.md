@@ -1,7 +1,7 @@
 # Symantec Messaging Gateway
 
 Publisher: Splunk \
-Connector Version: 2.0.5 \
+Connector Version: 2.0.6 \
 Product Vendor: Symantec \
 Product Name: Messaging Gateway \
 Minimum Product Version: 5.2.0
