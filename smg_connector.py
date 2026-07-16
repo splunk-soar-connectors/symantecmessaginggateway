@@ -91,7 +91,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         url = self._base_url + endpoint
 
         try:
-            r = request_func(url, data=data, headers=headers, verify=config.get("verify_server_cert", False), params=params)
+            r = request_func(url, data=data, headers=headers, verify=config.get("verify_server_cert", True), params=params)
         except Exception as e:
             return RetVal(action_result.set_status(phantom.APP_ERROR, f"Error Connecting to server. Details: {e!s}"), resp_json)
 
