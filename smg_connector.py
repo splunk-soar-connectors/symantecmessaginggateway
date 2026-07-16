@@ -25,6 +25,7 @@ from phantom.base_connector import BaseConnector
 
 
 DEFAULT_REQUEST_TIMEOUT = 30  # in seconds
+MAX_MEMBER_LIST_PAGES = 1000
 
 
 class RetVal(tuple):
@@ -245,6 +246,12 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         cur_page = 1
 
         while True:
+            if cur_page > MAX_MEMBER_LIST_PAGES:
+                return action_result.set_status(
+                    phantom.APP_ERROR,
+                    f"Exceeded the maximum of {MAX_MEMBER_LIST_PAGES} member-list pages without finding the item",
+                )
+
             soup = BeautifulSoup(resp.text, "html.parser")
             member_table = soup.find("table", {"id": "membersList"})
             if not member_table:
@@ -267,6 +274,8 @@ class SymantecMessagingGatewayConnector(BaseConnector):
                 break
 
             next_button = soup.find("button", {"id": "nextButton"})
+            if next_button is None:
+                return action_result.set_status(phantom.APP_ERROR, "Could not determine whether another member-list page exists")
             if "disabled" in next_button.attrs:
                 break
 
