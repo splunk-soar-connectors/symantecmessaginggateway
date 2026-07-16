@@ -258,11 +258,12 @@ class SymantecMessagingGatewayConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_ERROR, "Could not find member list table")
 
             item_id = None
-            member_tags = soup.findAll("tr")
+            member_tags = member_table.find_all("tr")
             if not member_tags:
                 return action_result.set_status(phantom.APP_ERROR, "Could not find any items in bad senders list")
             for tag in member_tags:
-                if item in tag.text:
+                cell_values = [cell.get_text(" ", strip=True) for cell in tag.find_all("td")]
+                if item in cell_values:
                     checkbox = tag.find("input", {"name": "selectedGroupMembers"})
                     if not checkbox:
                         return action_result.set_status(phantom.APP_ERROR, "Could not find item ID")
