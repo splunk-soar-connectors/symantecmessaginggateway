@@ -107,6 +107,24 @@ class SymantecMessagingGatewayConnector(BaseConnector):
 
         return RetVal(phantom.APP_SUCCESS, r)
 
+    def _verify_ui_response(self, response, action_result, operation):
+        """Fail when the SMG UI reports an error inside an HTTP 200 response."""
+        try:
+            soup = BeautifulSoup(response.text, "html.parser")
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, f"Could not parse the server response while {operation}: {e!s}")
+
+        if soup.find("input", {"name": "lastlogin"}) is not None:
+            return action_result.set_status(phantom.APP_ERROR, f"Session expired while {operation}: server returned the login page")
+
+        error_tag = soup.select_one(".errorMessage, .errorMessageText")
+        if error_tag is not None:
+            error_text = error_tag.get_text(" ", strip=True) or "unspecified error"
+            error_text = error_text.replace("{", "{{").replace("}", "}}")
+            return action_result.set_status(phantom.APP_ERROR, f"Server rejected the request while {operation}: {error_text}")
+
+        return phantom.APP_SUCCESS
+
     def _login(self, action_result):
         self.debug_print("Attempting login")
 
@@ -177,12 +195,18 @@ class SymantecMessagingGatewayConnector(BaseConnector):
             return ret_val
 
         params = {"symantec.brightmail.key.TOKEN": self._token, "addEditSenders": item, "view": "badSenders"}
-        ret_val, _resp = self._make_rest_call("/reputation/sender-group/saveSender.do", action_result, params=params)
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/saveSender.do", action_result, params=params)
+        if phantom.is_fail(ret_val):
+            return ret_val
+        ret_val = self._verify_ui_response(resp, action_result, "saving the sender entry")
         if phantom.is_fail(ret_val):
             return ret_val
 
         params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders"}
-        ret_val, _resp = self._make_rest_call("/reputation/sender-group/saveGroup.do", action_result, params=params)
+        ret_val, resp = self._make_rest_call("/reputation/sender-group/saveGroup.do", action_result, params=params)
+        if phantom.is_fail(ret_val):
+            return ret_val
+        ret_val = self._verify_ui_response(resp, action_result, "saving the sender group")
         if phantom.is_fail(ret_val):
             return ret_val
 
@@ -270,9 +294,15 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         ret_val, resp = self._make_rest_call("/reputation/sender-group/deleteSender.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
+        ret_val = self._verify_ui_response(resp, action_result, "deleting the sender entry")
+        if phantom.is_fail(ret_val):
+            return ret_val
 
         params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders"}
         ret_val, resp = self._make_rest_call("/reputation/sender-group/saveGroup.do", action_result, params=params)
+        if phantom.is_fail(ret_val):
+            return ret_val
+        ret_val = self._verify_ui_response(resp, action_result, "saving the sender group")
         if phantom.is_fail(ret_val):
             return ret_val
 

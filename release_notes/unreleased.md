@@ -2,3 +2,4 @@
 * Remove beautifulsoup4 from requirements.txt
 * Enable TLS certificate verification by default
 * Send login credentials in the request body and redact them from connection errors
+* Fail blocklist actions when SMG reports an error in an HTTP 200 response
