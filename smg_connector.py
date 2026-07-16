@@ -1,6 +1,6 @@
 # File: smg_connector.py
 #
-# Copyright (c) 2018-2025 Splunk Inc.
+# Copyright (c) 2018-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
             self.debug_print("Login Failed")
             return action_result.get_status()
 
-        ret_val, resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do?view=badSenders", action_result)
+        ret_val, _resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do?view=badSenders", action_result)
         if phantom.is_fail(ret_val):
             return ret_val
 
@@ -161,21 +161,21 @@ class SymantecMessagingGatewayConnector(BaseConnector):
             sender_group = "1|3"
 
         params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders", "selectedSenderGroups": sender_group}
-        ret_val, resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do", action_result, params=params)
+        ret_val, _resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        ret_val, resp = self._make_rest_call("/reputation/sender-group/addSender.do", action_result, params=params)
+        ret_val, _resp = self._make_rest_call("/reputation/sender-group/addSender.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
         params = {"symantec.brightmail.key.TOKEN": self._token, "addEditSenders": item, "view": "badSenders"}
-        ret_val, resp = self._make_rest_call("/reputation/sender-group/saveSender.do", action_result, params=params)
+        ret_val, _resp = self._make_rest_call("/reputation/sender-group/saveSender.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
         params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders"}
-        ret_val, resp = self._make_rest_call("/reputation/sender-group/saveGroup.do", action_result, params=params)
+        ret_val, _resp = self._make_rest_call("/reputation/sender-group/saveGroup.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
