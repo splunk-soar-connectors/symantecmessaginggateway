@@ -1,6 +1,6 @@
 # File: smg_connector.py
 #
-# Copyright (c) 2018-2025 Splunk Inc.
+# Copyright (c) 2018-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ from phantom.base_connector import BaseConnector
 
 
 DEFAULT_REQUEST_TIMEOUT = 30  # in seconds
+MAX_MEMBER_LIST_PAGES = 1000
 
 
 class RetVal(tuple):
@@ -91,14 +92,39 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         url = self._base_url + endpoint
 
         try:
-            r = request_func(url, data=data, headers=headers, verify=config.get("verify_server_cert", False), params=params)
+            r = request_func(url, data=data, headers=headers, verify=config.get("verify_server_cert", True), params=params)
         except Exception as e:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Error Connecting to server. Details: {e!s}"), resp_json)
+            error = str(e)
+            password = config.get("password")
+            if password:
+                password = str(password)
+                error = error.replace(requests.utils.quote(password, safe=""), "********")
+                error = error.replace(password, "********")
+            error = error.replace("{", "{{").replace("}", "}}")
+            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Error Connecting to server. Details: {error}"), resp_json)
 
         if not r:
             return self._process_html_response(r, action_result)
 
         return RetVal(phantom.APP_SUCCESS, r)
+
+    def _verify_ui_response(self, response, action_result, operation):
+        """Fail when the SMG UI reports an error inside an HTTP 200 response."""
+        try:
+            soup = BeautifulSoup(response.text, "html.parser")
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, f"Could not parse the server response while {operation}: {e!s}")
+
+        if soup.find("input", {"name": "lastlogin"}) is not None:
+            return action_result.set_status(phantom.APP_ERROR, f"Session expired while {operation}: server returned the login page")
+
+        error_tag = soup.select_one(".errorMessage, .errorMessageText")
+        if error_tag is not None:
+            error_text = error_tag.get_text(" ", strip=True) or "unspecified error"
+            error_text = error_text.replace("{", "{{").replace("}", "}}")
+            return action_result.set_status(phantom.APP_ERROR, f"Server rejected the request while {operation}: {error_text}")
+
+        return phantom.APP_SUCCESS
 
     def _login(self, action_result):
         self.debug_print("Attempting login")
@@ -116,9 +142,9 @@ class SymantecMessagingGatewayConnector(BaseConnector):
 
         config = self.get_config()
 
-        params = {"lastlogin": lastlogin, "username": config["username"], "password": config["password"]}
+        data = {"lastlogin": lastlogin, "username": config["username"], "password": config["password"]}
 
-        ret_val, resp = self._make_rest_call("/login.do", action_result, params=params)
+        ret_val, resp = self._make_rest_call("/login.do", action_result, data=data, method="post")
 
         if phantom.is_fail(ret_val):
             return ret_val
@@ -151,7 +177,7 @@ class SymantecMessagingGatewayConnector(BaseConnector):
             self.debug_print("Login Failed")
             return action_result.get_status()
 
-        ret_val, resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do?view=badSenders", action_result)
+        ret_val, _resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do?view=badSenders", action_result)
         if phantom.is_fail(ret_val):
             return ret_val
 
@@ -161,11 +187,11 @@ class SymantecMessagingGatewayConnector(BaseConnector):
             sender_group = "1|3"
 
         params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders", "selectedSenderGroups": sender_group}
-        ret_val, resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do", action_result, params=params)
+        ret_val, _resp = self._make_rest_call("/reputation/sender-group/viewSenderGroup.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
-        ret_val, resp = self._make_rest_call("/reputation/sender-group/addSender.do", action_result, params=params)
+        ret_val, _resp = self._make_rest_call("/reputation/sender-group/addSender.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
 
@@ -173,9 +199,15 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         ret_val, resp = self._make_rest_call("/reputation/sender-group/saveSender.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
+        ret_val = self._verify_ui_response(resp, action_result, "saving the sender entry")
+        if phantom.is_fail(ret_val):
+            return ret_val
 
         params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders"}
         ret_val, resp = self._make_rest_call("/reputation/sender-group/saveGroup.do", action_result, params=params)
+        if phantom.is_fail(ret_val):
+            return ret_val
+        ret_val = self._verify_ui_response(resp, action_result, "saving the sender group")
         if phantom.is_fail(ret_val):
             return ret_val
 
@@ -214,17 +246,24 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         cur_page = 1
 
         while True:
+            if cur_page > MAX_MEMBER_LIST_PAGES:
+                return action_result.set_status(
+                    phantom.APP_ERROR,
+                    f"Exceeded the maximum of {MAX_MEMBER_LIST_PAGES} member-list pages without finding the item",
+                )
+
             soup = BeautifulSoup(resp.text, "html.parser")
             member_table = soup.find("table", {"id": "membersList"})
             if not member_table:
                 return action_result.set_status(phantom.APP_ERROR, "Could not find member list table")
 
             item_id = None
-            member_tags = soup.findAll("tr")
+            member_tags = member_table.find_all("tr")
             if not member_tags:
                 return action_result.set_status(phantom.APP_ERROR, "Could not find any items in bad senders list")
             for tag in member_tags:
-                if item in tag.text:
+                cell_values = [cell.get_text(" ", strip=True) for cell in tag.find_all("td")]
+                if item in cell_values:
                     checkbox = tag.find("input", {"name": "selectedGroupMembers"})
                     if not checkbox:
                         return action_result.set_status(phantom.APP_ERROR, "Could not find item ID")
@@ -236,6 +275,8 @@ class SymantecMessagingGatewayConnector(BaseConnector):
                 break
 
             next_button = soup.find("button", {"id": "nextButton"})
+            if next_button is None:
+                return action_result.set_status(phantom.APP_ERROR, "Could not determine whether another member-list page exists")
             if "disabled" in next_button.attrs:
                 break
 
@@ -263,9 +304,15 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         ret_val, resp = self._make_rest_call("/reputation/sender-group/deleteSender.do", action_result, params=params)
         if phantom.is_fail(ret_val):
             return ret_val
+        ret_val = self._verify_ui_response(resp, action_result, "deleting the sender entry")
+        if phantom.is_fail(ret_val):
+            return ret_val
 
         params = {"symantec.brightmail.key.TOKEN": self._token, "view": "badSenders"}
         ret_val, resp = self._make_rest_call("/reputation/sender-group/saveGroup.do", action_result, params=params)
+        if phantom.is_fail(ret_val):
+            return ret_val
+        ret_val = self._verify_ui_response(resp, action_result, "saving the sender group")
         if phantom.is_fail(ret_val):
             return ret_val
 

@@ -1,9 +1,9 @@
 # Symantec Messaging Gateway
 
-Publisher: Splunk \
-Connector Version: 2.0.8 \
-Product Vendor: Symantec \
-Product Name: Messaging Gateway \
+Publisher: Splunk <br>
+Connector Version: 2.0.8 <br>
+Product Vendor: Symantec <br>
+Product Name: Messaging Gateway <br>
 Minimum Product Version: 5.2.0
 
 This app integrates with an instance of Symantec Messaging Gateway to perform containment and corrective actions
@@ -21,19 +21,19 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Validate the supplied credentials with the SMG server \
-[blocklist email](#action-blocklist-email) - Add an email to the bad sender list \
-[unblocklist email](#action-unblocklist-email) - Remove an email from the bad sender list \
-[blocklist domain](#action-blocklist-domain) - Add a domain to the bad sender list \
-[unblocklist domain](#action-unblocklist-domain) - Remove a domain from the bad sender list \
-[blocklist ip](#action-blocklist-ip) - Add an IP to the bad sender list \
+[test connectivity](#action-test-connectivity) - Validate the supplied credentials with the SMG server <br>
+[blocklist email](#action-blocklist-email) - Add an email to the bad sender list <br>
+[unblocklist email](#action-unblocklist-email) - Remove an email from the bad sender list <br>
+[blocklist domain](#action-blocklist-domain) - Add a domain to the bad sender list <br>
+[unblocklist domain](#action-unblocklist-domain) - Remove a domain from the bad sender list <br>
+[blocklist ip](#action-blocklist-ip) - Add an IP to the bad sender list <br>
 [unblocklist ip](#action-unblocklist-ip) - Remove an IP from the bad sender list
 
 ## action: 'test connectivity'
 
 Validate the supplied credentials with the SMG server
 
-Type: **test** \
+Type: **test** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -48,7 +48,7 @@ No Output
 
 Add an email to the bad sender list
 
-Type: **contain** \
+Type: **contain** <br>
 Read only: **False**
 
 This action will add an email address to the list of <b>Local Bad Sender Domains</b>.
@@ -75,7 +75,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Remove an email from the bad sender list
 
-Type: **correct** \
+Type: **correct** <br>
 Read only: **False**
 
 This action will remove an email address from the list of <b>Local Bad Sender Domains</b>.
@@ -102,7 +102,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Add a domain to the bad sender list
 
-Type: **contain** \
+Type: **contain** <br>
 Read only: **False**
 
 This action will add a domain to the list of <b>Local Bad Sender Domains</b>.
@@ -129,7 +129,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Remove a domain from the bad sender list
 
-Type: **correct** \
+Type: **correct** <br>
 Read only: **False**
 
 This action will remove a domain from the list of <b>Local Bad Sender Domains</b>.
@@ -156,7 +156,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Add an IP to the bad sender list
 
-Type: **contain** \
+Type: **contain** <br>
 Read only: **False**
 
 This action will add an IP address to the list of <b>Local Bad Sender IPs</b>.
@@ -183,7 +183,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Remove an IP from the bad sender list
 
-Type: **correct** \
+Type: **correct** <br>
 Read only: **False**
 
 This action will remove an IP address from the list of <b>Local Bad Sender IPs</b>.
@@ -210,7 +210,7 @@ ______________________________________________________________________
 
 Auto-generated Splunk SOAR Connector documentation.
 
-Copyright 2025 Splunk Inc.
+Copyright 2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
