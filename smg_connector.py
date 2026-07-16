@@ -93,7 +93,14 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         try:
             r = request_func(url, data=data, headers=headers, verify=config.get("verify_server_cert", True), params=params)
         except Exception as e:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Error Connecting to server. Details: {e!s}"), resp_json)
+            error = str(e)
+            password = config.get("password")
+            if password:
+                password = str(password)
+                error = error.replace(requests.utils.quote(password, safe=""), "********")
+                error = error.replace(password, "********")
+            error = error.replace("{", "{{").replace("}", "}}")
+            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Error Connecting to server. Details: {error}"), resp_json)
 
         if not r:
             return self._process_html_response(r, action_result)
@@ -116,9 +123,9 @@ class SymantecMessagingGatewayConnector(BaseConnector):
 
         config = self.get_config()
 
-        params = {"lastlogin": lastlogin, "username": config["username"], "password": config["password"]}
+        data = {"lastlogin": lastlogin, "username": config["username"], "password": config["password"]}
 
-        ret_val, resp = self._make_rest_call("/login.do", action_result, params=params)
+        ret_val, resp = self._make_rest_call("/login.do", action_result, data=data, method="post")
 
         if phantom.is_fail(ret_val):
             return ret_val
