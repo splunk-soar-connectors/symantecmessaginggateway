@@ -17,6 +17,7 @@
 # Phantom App imports
 import json
 
+import idna
 import phantom.app as phantom
 import requests
 from bs4 import BeautifulSoup
@@ -334,13 +335,29 @@ class SymantecMessagingGatewayConnector(BaseConnector):
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._blocklist_item(action_result, param["domain"], "domain")
+        ret_val, domain = self._normalize_domain(action_result, param["domain"])
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        return self._blocklist_item(action_result, domain, "domain")
 
     def _handle_unblocklist_domain(self, param):
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        return self._unblocklist_item(action_result, param["domain"], "domain")
+        ret_val, domain = self._normalize_domain(action_result, param["domain"])
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
+
+        return self._unblocklist_item(action_result, domain, "domain")
+
+    def _normalize_domain(self, action_result, domain):
+        """Convert a Unicode domain to the ASCII form accepted by SMG."""
+
+        try:
+            return RetVal(phantom.APP_SUCCESS, idna.encode(domain, uts46=True).decode("ascii"))
+        except idna.IDNAError:
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Please provide a valid domain name"), None)
 
     def _handle_blocklist_ip(self, param):
         self.save_progress(f"In action handler for: {self.get_action_identifier()}")
